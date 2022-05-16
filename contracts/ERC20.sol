@@ -44,7 +44,9 @@ contract ERC20 {
 
         allowances[sender][msg.sender] = currentAllowance - amount;
 
-        return _transfer(sender, recipient, amount);
+        uint256 resultAllowance = allowances[sender][msg.sender];
+
+        return _transfer(sender, recipient, resultAllowance);
 
     }
 
