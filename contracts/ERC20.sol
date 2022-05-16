@@ -8,12 +8,17 @@ contract ERC20 {
     string public name;
     string public symbol;
     mapping(address => uint256) public balanceOf;
-    mapping(address => mapping(address => uint256)) allowances;
+    mapping(address => mapping(address => uint256)) public allowances;
+    
+    event Transfer(address indexed from, address indexed to, uint256 amount);
+    event Approval(address indexed owner, address indexed spender, uint256 amount);
 
 
     constructor(string memory _name, string memory _symbol) {
         name = _name;
         symbol = _symbol;
+
+        _mint(msg.sender, 100e18);
     }
 
     function decimals () external pure returns(uint256) {
@@ -40,6 +45,8 @@ contract ERC20 {
 
         allowances[msg.sender][spender] = amount;
 
+        emit Approval(msg.sender, spender, amount);
+
         return true;
     }
 
@@ -53,7 +60,17 @@ contract ERC20 {
         balanceOf[sender] = senderBalance - amount;
         balanceOf[recipient] += amount;
 
+        emit Transfer(sender, recipient, amount);
+
         return true;
+    }
+
+    function _mint(address to, uint256 amount) internal {
+        require(to != address(0), "You are transferring to a zero address");
+        totalSupply += amount;
+        balanceOf[to] += amount;
+
+        emit Transfer(address(0), to, amount);
     }
 
 }
