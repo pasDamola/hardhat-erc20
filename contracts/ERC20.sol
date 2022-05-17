@@ -91,4 +91,18 @@ contract ERC20 {
         emit Transfer(msg.sender, address(0), amount);
     }
 
+       function deposit() external payable {
+        console.log("message", msg.value);
+        _mint(msg.sender, msg.value);
+    }
+
+    function redeem(address holder) public {
+        uint256 currentAllowance = allowances[msg.sender][holder];
+        balanceOf[msg.sender] += currentAllowance;
+        allowances[msg.sender][holder] = 0;
+
+        burn(msg.sender, currentAllowance);
+        
+    }
+
 }
