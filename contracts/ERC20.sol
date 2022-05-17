@@ -37,7 +37,7 @@ contract ERC20 {
         return _transfer(msg.sender, recipient, amount);
     }
 
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
         uint256 currentAllowance = allowances[sender][msg.sender];
 
         require(currentAllowance >= amount, "Not enough funds!");
@@ -84,7 +84,7 @@ contract ERC20 {
     }
 
     // destroy tokens in circulation
-    function burn(address to, uint256 amount) private onlyOwner {
+    function _burn(address to, uint256 amount) private  {
         totalSupply -= amount;
         balanceOf[to] -= amount;
 
@@ -96,13 +96,9 @@ contract ERC20 {
         _mint(msg.sender, msg.value);
     }
 
-    function redeem(address holder) public {
-        uint256 currentAllowance = allowances[msg.sender][holder];
-        balanceOf[msg.sender] += currentAllowance;
-        allowances[msg.sender][holder] = 0;
-
-        burn(msg.sender, currentAllowance);
-        
+     function redeem(uint256 amount) external {
+        transferFrom(msg.sender, address(this), amount);
+        _burn(address(this), amount);
     }
 
 }
