@@ -91,7 +91,7 @@ contract ERC20 {
         emit Transfer(msg.sender, address(0), amount);
     }
 
-       function deposit() external payable {
+    function deposit() external payable {
         console.log("message", msg.value);
         _mint(msg.sender, msg.value);
     }
