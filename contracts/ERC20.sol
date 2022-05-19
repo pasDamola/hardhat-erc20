@@ -7,26 +7,19 @@ contract ERC20 {
     uint256 public totalSupply;
     string public name;
     string public symbol;
-    address public owner;
 
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowances;
     
     event Transfer(address indexed from, address indexed to, uint256 amount);
-    event Approval(address indexed owner, address indexed spender, uint256 amount);
+    event Approval(address indexed holder, address indexed spender, uint256 amount);
 
 
     constructor(string memory _name, string memory _symbol) {
         name = _name;
         symbol = _symbol;
-        owner = msg.sender;
 
         _mint(msg.sender, 100e18);
-    }
-
-    modifier onlyOwner {
-        require(msg.sender == owner, "Only the owner can perform this function");
-        _;
     }
 
     function decimals () external pure returns(uint256) {
@@ -84,9 +77,9 @@ contract ERC20 {
     }
 
     // destroy tokens in circulation
-    function _burn(address to, uint256 amount) private  {
+    function _burn(address from, uint256 amount) internal  {
         totalSupply -= amount;
-        balanceOf[to] -= amount;
+        balanceOf[from] -= amount;
 
         emit Transfer(msg.sender, address(0), amount);
     }
