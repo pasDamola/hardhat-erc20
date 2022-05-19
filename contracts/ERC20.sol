@@ -77,9 +77,9 @@ contract ERC20 {
     }
 
     // destroy tokens in circulation
-    function _burn(address from, uint256 amount) internal  {
+    function _burn(address burnFrom, uint256 amount) internal  {
         totalSupply -= amount;
-        balanceOf[from] -= amount;
+        balanceOf[burnFrom] -= amount;
 
         emit Transfer(msg.sender, address(0), amount);
     }
