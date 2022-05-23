@@ -1,10 +1,11 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.13;
 
 import {ERC20} from "./ERC20.sol";
 import {DepositorCoin} from "./DepositorCoin.sol";
-import {Oracle} from "./Oracle.sol";
+import {PriceConsumerV3} from "./Oracle.sol";
 import {WadLib} from "./WadLib.sol";
+import "hardhat/console.sol";
 
 contract StableCoin is ERC20 {
     using WadLib for uint256;
@@ -15,22 +16,23 @@ contract StableCoin is ERC20 {
     );
 
     DepositorCoin public depositorCoin;
-    Oracle public oracle;
+    PriceConsumerV3 public oracle;
     uint256 public feeRatePercentage;
     uint256 public constant INITIAL_COLLATERAL_RATIO_PERCENTAGE = 10;
 
-    constructor(uint256 _feeRatePercentage, Oracle _oracle)
+    constructor(uint256 _feeRatePercentage, PriceConsumerV3 _oracle)
         ERC20("StableCoin", "STC")
     {
         feeRatePercentage = _feeRatePercentage;
         oracle = _oracle;
+
     }
 
     function mint() external payable {
         uint256 fee = _getFee(msg.value);
         uint256 remainingEth = msg.value - fee;
 
-        uint256 mintStableCoinAmount = remainingEth * oracle.getPrice();
+        uint256 mintStableCoinAmount = remainingEth * uint256(oracle.getLatestPrice());
         _mint(msg.sender, mintStableCoinAmount);
     }
 
@@ -43,7 +45,7 @@ contract StableCoin is ERC20 {
 
         _burn(msg.sender, burnStableCoinAmount);
 
-        uint256 refundingEth = burnStableCoinAmount / oracle.getPrice();
+        uint256 refundingEth = burnStableCoinAmount / uint256(oracle.getLatestPrice());
         uint256 fee = _getFee(refundingEth);
         uint256 remainingRefundingEth = refundingEth - fee;
 
@@ -66,7 +68,7 @@ contract StableCoin is ERC20 {
 
         if (deficitOrSurplusInUsd <= 0) {
             uint256 deficitInUsd = uint256(deficitOrSurplusInUsd * -1);
-            uint256 usdInEthPrice = oracle.getPrice();
+            uint256 usdInEthPrice = uint256(oracle.getLatestPrice());
             uint256 deficitInEth = deficitInUsd / usdInEthPrice;
 
             uint256 requiredInitialSurplusInUsd = (INITIAL_COLLATERAL_RATIO_PERCENTAGE *
@@ -97,7 +99,7 @@ contract StableCoin is ERC20 {
         uint256 surplusInUsd = uint256(deficitOrSurplusInUsd);
         WadLib.Wad dpcInUsdPrice = _getDPCinUsdPrice(surplusInUsd);
         uint256 mintDepositorCoinAmount = ((msg.value.mulWad(dpcInUsdPrice)) /
-            oracle.getPrice());
+            uint256(oracle.getLatestPrice()));
 
         depositorCoin.mint(msg.sender, mintDepositorCoinAmount);
     }
@@ -118,7 +120,7 @@ contract StableCoin is ERC20 {
         uint256 surplusInUsd = uint256(deficitOrSurplusInUsd);
         WadLib.Wad dpcInUsdPrice = _getDPCinUsdPrice(surplusInUsd);
         uint256 refundingUsd = burnDepositorCoinAmount.mulWad(dpcInUsdPrice);
-        uint256 refundingEth = refundingUsd / oracle.getPrice();
+        uint256 refundingEth = refundingUsd / uint256(oracle.getLatestPrice());
 
         (bool success, ) = msg.sender.call{value: refundingEth}("");
         require(success, "STC: Withdraw refund transaction failed");
@@ -130,7 +132,7 @@ contract StableCoin is ERC20 {
         returns (int256)
     {
         uint256 ethContractBalanceInUsd = (address(this).balance - msg.value) *
-            oracle.getPrice();
+            uint256(oracle.getLatestPrice());
         uint256 totalStableCoinBalanceInUsd = totalSupply;
         int256 deficitOrSurplus = int256(ethContractBalanceInUsd) -
             int256(totalStableCoinBalanceInUsd);
